@@ -21,7 +21,7 @@ const Tasks = () => {
     };
 
     fetchTasks();
-  }, [uid]);
+  }, [uid, tasks]);
 
   const deleteTask = async (id) => {
     try {

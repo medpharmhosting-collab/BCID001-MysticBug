@@ -7,8 +7,8 @@ const InvestorDashboard = () => {
   const [activeTab, setActiveTab] = useState("Monthly");
   const [investorData, setInvestorData] = useState({});
   const [workforceCounts, setWorkforceCounts] = useState({ doctors: 0, patients: 0, total: 0 });
-  const [yesterdayCount, setYesterdayCount] = useState(0);
-  const [todayCount, setTodayCount] = useState(0);
+  const [yesterdayData, setYesterdayData] = useState({ new: 0, existing: 0 });
+  const [todayData, setTodayData] = useState({ new: 0, existing: 0 });
   const { uid, user } = useAuth()
   const now = new Date();
   const hour = now.getHours();
@@ -52,10 +52,10 @@ const InvestorDashboard = () => {
       const yesterdayResponse = await fetch(`${BASE_URL}/appointments/confirmed_patients_yesterday`)
       const todayResponse = await fetch(`${BASE_URL}/appointments/confirmed_patients_today`)
       if (!yesterdayResponse.ok || !todayResponse.ok) throw new Error("error while getting patient counts")
-      const yesterdayData = await yesterdayResponse.json()
-      const todayData = await todayResponse.json()
-      setYesterdayCount(yesterdayData.count || 0);
-      setTodayCount(todayData.count || 0);
+      const yesterday = await yesterdayResponse.json()
+      const today = await todayResponse.json()
+      setYesterdayData(yesterday);
+      setTodayData(today);
     } catch (error) {
       console.log("error while fetching patient counts", error)
     }
@@ -81,9 +81,13 @@ const InvestorDashboard = () => {
   const yesterdayIndex = (todayIndex - 1 + 7) % 7;
 
   const patientsData = days.map((day, index) => {
-    const existing = index === yesterdayIndex ? yesterdayCount : 0;
-    const newCount = index === todayIndex ? todayCount : 0;
-    return { day, existing, new: newCount };
+    if (index === yesterdayIndex) {
+      return { day, existing: yesterdayData.existing, new: yesterdayData.new };
+    } else if (index === todayIndex) {
+      return { day, existing: todayData.existing, new: todayData.new };
+    } else {
+      return { day, existing: 0, new: 0 };
+    }
   });
 
   return (

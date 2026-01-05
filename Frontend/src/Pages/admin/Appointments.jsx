@@ -223,13 +223,13 @@ const Appointments = () => {
               return (
                 <div
                   key={idx}
-                  className={`border border-black p-1 overflow-hidden
+                  className={`border border-black p-1 ${cellAppointments.length > 0 ? 'overflow-y-auto' : ''}
             ${isTodayCell ? "bg-[#acd8f6]" : "bg-[#d1e8f3]"}
             ${!isCurrentMonth ? "opacity-40" : ""}`}
                 >
                   <div className="text-xs font-bold">{date.getDate()}</div>
 
-                  <div className="mt-1 flex flex-col gap-1 overflow-y-auto h-[55px] sm:h-[70px]">
+                  <div className="mt-1 flex flex-col gap-1">
                     {cellAppointments.map(a => (
                       <div
                         key={a._id}
@@ -251,8 +251,8 @@ const Appointments = () => {
           </div>
         </div>
         <h2 className="text-2xl font-lato font-bold mt-4">Appointments</h2>
-        <div className="rounded-lg mt-4 overflow-x-auto overflow-y-auto max-h-[68vh]">
-          <table className="rounded-lg mt-4 overflow-x-auto overflow-y-auto max-h-[68vh] text-xs sm:text-sm">
+        <div className="rounded-lg mt-4 overflow-y-auto max-h-[68vh]">
+          <table className="bg-[#f7fafc] w-full">
             <thead>
               <tr className="text-center font-semibold bg-gray-100">
                 <th className="px-4 py-3">Appointment ID</th>
@@ -263,7 +263,7 @@ const Appointments = () => {
               </tr>
             </thead>
             <tbody>
-              {loading ? <tr> <td colSpan="6" className='py-6'><Loader /></td> </tr> : monthlyAppointments.length > 0 ? monthlyAppointments.map((data, index) => (
+              {loading ? <tr> <td colSpan="5" className='py-6'><Loader /></td> </tr> : monthlyAppointments.length > 0 ? monthlyAppointments.map((data, index) => (
                 <tr className="text-center" key={data._id}>
                   <td className="px-4 py-3">{index + 1}</td>
                   <td className="px-4 py-3">{new Date(data.date).toLocaleDateString('en-GB', {
@@ -274,14 +274,17 @@ const Appointments = () => {
                   <td className="px-4 py-3">{data.doctor}</td>
                   <td className="px-4 py-3">{data.patientName}</td>
                   <td className="px-4 py-3">
-                    <button className="bg-[#e8edf2] rounded px-3 sm:px-6 py-1 shadow">
-                      {data.status}
-                    </button>
+                    <span className={`inline-block w-[90px] px-2 py-1 font-semibold text-center rounded text-sm ${data.status === 'confirmed' ? 'bg-green-100 text-green-700' :
+                      data.status === 'rejected' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                      {data.status || 'N/A'}
+                    </span>
                   </td>
                 </tr>
               )) : <tr className='text-center font-semibold text-red-500'>
                 <td
-                  colSpan="6" className="py-4">
+                  colSpan="5" className="py-4">
                   No data available
                 </td>
               </tr>

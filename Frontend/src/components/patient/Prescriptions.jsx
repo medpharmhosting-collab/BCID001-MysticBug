@@ -159,7 +159,7 @@ const Prescriptions = ({ onClose }) => {
         </div>
 
         {/* Illustration */}
-        <div className="hidden sm:flex items-center absolute bottom-2 right-2 w-40 h-40 pointer-events-none opacity-90">
+        <div className="hidden sm:flex items-center absolute bottom-2 right-2 w-55 h-55 pointer-events-none opacity-90">
           <img
             src={images.Prescriptions}
             alt="Illustration"

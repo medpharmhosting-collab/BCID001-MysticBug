@@ -159,9 +159,11 @@ const autoRejectExpiredAppointments = async () => {
   for (const appt of appointments) {
     const appointmentDate = new Date(appt.date);
 
-    // Convert timeSlot to valid hours
-    const [time, period] = appt.timeSlot.split(" ");
-    let hours = parseInt(time);
+    // Convert timeSlot to valid hours and minutes
+    const [timeStr, period] = appt.timeSlot.split(" ");
+    const [hourStr, minStr] = timeStr.split(":");
+    let hours = parseInt(hourStr);
+    let minutes = parseInt(minStr || 0);
     if (period === "PM" && hours !== 12) hours += 12;
     if (period === "AM" && hours === 12) hours = 0;
 
@@ -170,7 +172,7 @@ const autoRejectExpiredAppointments = async () => {
       appointmentDate.getMonth(),
       appointmentDate.getDate(),
       hours,
-      0,
+      minutes,
       0
     );
 
@@ -333,15 +335,24 @@ export const confirmedPatientsYesterday = async (req, res) => {
     const yesterdayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
     const yesterdayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-    // Find confirmed appointments yesterday
-    const confirmedAppointments = await Appointment.find({
+    // Patients with confirmed appointments yesterday
+    const yesterdaysConfirmedAppointments = await Appointment.find({
       date: { $gte: yesterdayStart, $lt: yesterdayEnd },
       status: "confirmed"
     }).distinct('patientId');
 
-    const count = confirmedAppointments.length;
+    // Patients with confirmed appointments before yesterday
+    const previousConfirmedAppointments = await Appointment.find({
+      date: { $lt: yesterdayStart },
+      status: "confirmed"
+    }).distinct('patientId');
 
-    res.status(200).json({ count });
+    const previousSet = new Set(previousConfirmedAppointments);
+
+    const newPatients = yesterdaysConfirmedAppointments.filter(pid => !previousSet.has(pid));
+    const existingPatients = yesterdaysConfirmedAppointments.filter(pid => previousSet.has(pid));
+
+    res.status(200).json({ new: newPatients.length, existing: existingPatients.length });
   } catch (error) {
     console.error("Error fetching confirmed patients yesterday:", error);
     res.status(500).json({ message: "Server error" });
@@ -353,15 +364,25 @@ export const confirmedPatientsToday = async (req, res) => {
     const now = new Date();
     const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    // Find confirmed appointments today
+
+    // Patients with confirmed appointments today
     const todaysConfirmedAppointments = await Appointment.find({
       date: { $gte: todayStart, $lt: todayEnd },
       status: "confirmed"
     }).distinct('patientId');
 
-    const count = todaysConfirmedAppointments.length;
+    // Patients with confirmed appointments before today
+    const previousConfirmedAppointments = await Appointment.find({
+      date: { $lt: todayStart },
+      status: "confirmed"
+    }).distinct('patientId');
 
-    res.status(200).json({ count });
+    const previousSet = new Set(previousConfirmedAppointments);
+
+    const newPatients = todaysConfirmedAppointments.filter(pid => !previousSet.has(pid));
+    const existingPatients = todaysConfirmedAppointments.filter(pid => previousSet.has(pid));
+
+    res.status(200).json({ new: newPatients.length, existing: existingPatients.length });
   } catch (error) {
     console.error("Error fetching confirmed patients today:", error);
     res.status(500).json({ message: "Server error" });

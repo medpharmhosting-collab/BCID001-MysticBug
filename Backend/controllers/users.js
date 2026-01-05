@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs"
 import axios from "axios"
 import jwt from "jsonwebtoken"
 import { UserProfile } from "../models/userProfile.js";
+import { Message } from "../models/Message.js";
 import validator from "validator";
 // ===== SIGN UP (Register New User) =====
 export const registerUser = async (req, res) => {
@@ -220,6 +221,7 @@ export const createUserProfile = async (req, res) => {
     const { uid } = req.params;
     const {
       fullName,
+      phoneNumber,
       email,
       medicalHistory,
       previousHospitalizations,
@@ -244,7 +246,7 @@ export const createUserProfile = async (req, res) => {
     const profile = await UserProfile.findOneAndUpdate(
       { uid },
       {
-        uid, fullName, email, medicalHistory, previousHospitalizations, allergies, age, dateOfBirth, gender, oxymeterHeartbeat, bloodType, height, weight, address, bloodPressure,
+        uid, fullName, phoneNumber, email, medicalHistory, previousHospitalizations, allergies, age, dateOfBirth, gender, oxymeterHeartbeat, bloodType, height, weight, address, bloodPressure,
         diabetes, existingInsurance
       },
       { upsert: true, new: true }
@@ -296,6 +298,12 @@ export const deletePatientById = async (req, res) => {
     if (!deleted) {
       return res.status(404).json({ success: false, message: "patient not found" });
     }
+
+    // Clean up related data
+    const uid = deleted.uid;
+    await UserProfile.findOneAndDelete({ uid });
+    await Message.deleteMany({ $or: [{ senderId: uid }, { receiverId: uid }] });
+
     res.status(200).json({ success: true, message: "patient deleted successfully" })
   } catch (error) {
     console.error("Error deleting patient:", error);

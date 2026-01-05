@@ -31,13 +31,15 @@ const AddDoctor = () => {
       [id]: value
     }));
   };
-  // Generate time slots from 12 AM to 11 PM
+  // Generate time slots from 9 AM to 11 PM in 30-minute intervals
   const generateTimeSlots = () => {
     const slots = [];
-    for (let hour = 0; hour < 24; hour++) {
+    for (let minutes = 9 * 60; minutes <= 23 * 60; minutes += 30) {
+      const hour = Math.floor(minutes / 60);
+      const min = minutes % 60;
       const period = hour >= 12 ? 'PM' : 'AM';
       const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
-      slots.push(`${displayHour}:00 ${period}`);
+      slots.push(`${displayHour}:${min.toString().padStart(2, '0')} ${period}`);
     }
     return slots;
   };

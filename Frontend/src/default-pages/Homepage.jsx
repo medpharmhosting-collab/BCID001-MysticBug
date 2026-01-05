@@ -2,7 +2,6 @@ import Banner from '../components/Banner'
 import { default_page_images } from '../assets/assets'
 import { default_page_icons } from "../assets/assets"
 import { useEffect, useState } from 'react'
-import Chatbot from '../components/Chatbot'
 
 const calling_girl = '/gifs/calling_girl.gif';
 const repair_man = '/gifs/repair_man.gif';
@@ -125,8 +124,6 @@ const Homepage = () => {
   return (
     <div>
       <Banner src={default_page_images.homepage} />
-      {/* chatbot section */}
-      <Chatbot />
       <div className="px-2 sm:px-12 py-4 sm:py-4 lg:-mt-[110px]">
         <div
           className="bg-[linear-gradient(90deg,rgba(200,201,255,0.5)_0%,rgba(158,198,255,0)_100%)] rounded-[25px] flex flex-col lg:flex-row justify-between items-start px-4 py-3 sm:px-8 sm:py-6">

@@ -45,15 +45,31 @@ import AuthEnterMobile from './Pages/AuthEnterMobile'
 import AuthEnterOTP from './Pages/AuthEnterOtp'
 import ScrollHandler from './components/ScrollHandler'
 import TellUsAboutYourself from './Pages/TellUsAboutYourself'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import ProfileModal from './components/ProfileModal'
 import DoctorProfile from './components/DoctorProfile'
 import VerifyAndNewPassword from './Pages/VerifyAndNewPassword'
+import Chatbot from './components/Chatbot'
 const App = () => {
   const location = useLocation();
 
   const [profileShow, setProfileShow] = useState(false);
-  const [doctorProfile, setDoctorProfile] = useState(false)
+  const [doctorProfile, setDoctorProfile] = useState(false);
+  const [showChatbot, setShowChatbot] = useState(true);
+
+  useEffect(() => {
+    setShowChatbot(false);
+    const handleScroll = () => {
+      if (window.scrollY > 200) {
+        setShowChatbot(true);
+      } else {
+        setShowChatbot(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   // Hide both Navbar & Footer
   const hideBothPaths = [
     "/login",
@@ -226,6 +242,7 @@ const App = () => {
         <Route path='*' element={<NotFound />} />
       </Routes>
       {!hideFooter && <Footer />}
+      <Chatbot open={showChatbot} initialOpen={false} showButton={showChatbot} />
     </div >
   )
 }
