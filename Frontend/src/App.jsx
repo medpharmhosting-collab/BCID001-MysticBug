@@ -55,20 +55,32 @@ const App = () => {
 
   const [profileShow, setProfileShow] = useState(false);
   const [doctorProfile, setDoctorProfile] = useState(false);
-  const [showChatbot, setShowChatbot] = useState(true);
+  const [showChatbot, setShowChatbot] = useState(false);
+
+  const isMainDashboard = location.pathname === '/patient-dashboard' || location.pathname === '/doctor-dashboard/overview' || location.pathname === '/admin-dashboard/dashboard';
 
   useEffect(() => {
-    setShowChatbot(false);
-    const handleScroll = () => {
-      if (window.scrollY > 200) {
-        setShowChatbot(true);
-      } else {
+    if (isMainDashboard) {
+      setShowChatbot(true);
+    } else {
+      setShowChatbot(false);
+      let scrollTimeout;
+      const handleScroll = () => {
         setShowChatbot(false);
-      }
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+          if (window.scrollY > 200) {
+            setShowChatbot(true);
+          }
+        }, 350);
+      };
+      window.addEventListener('scroll', handleScroll);
+      return () => {
+        window.removeEventListener('scroll', handleScroll);
+        clearTimeout(scrollTimeout);
+      };
+    }
+  }, [isMainDashboard]);
 
   // Hide both Navbar & Footer
   const hideBothPaths = [
@@ -242,7 +254,7 @@ const App = () => {
         <Route path='*' element={<NotFound />} />
       </Routes>
       {!hideFooter && <Footer />}
-      <Chatbot open={showChatbot} initialOpen={false} showButton={showChatbot} />
+      <Chatbot open={false} initialOpen={false} showButton={showChatbot} />
     </div >
   )
 }
