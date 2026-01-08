@@ -15,6 +15,7 @@ import { investorRoutes } from "./routes/investor.js";
 import { doctorRoutes } from "./routes/doctor.js";
 import { medicalRoutes } from "./routes/medical.js";
 import { appointmentsRoutes } from "./routes/appointment.js";
+import notificationRoutes from "./routes/notification.js";
 
 dotenv.config();
 
@@ -56,9 +57,10 @@ app.use("/api", getCount);
 app.use("/api/admin", adminRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/faqs", FaqRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // hidden for vercel deployment
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server listening on ${PORT}`));
 
-export default app; 
+export default app;

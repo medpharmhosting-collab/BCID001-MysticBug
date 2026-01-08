@@ -1,17 +1,24 @@
-import { useState } from "react";
-import { FaSearch, FaUserCircle } from "react-icons/fa";
+import { useState, useEffect } from "react";
+import { FaSearch, FaUserCircle, FaBell } from "react-icons/fa";
 import { CiMenuBurger } from "react-icons/ci";
 import { IoMdClose } from "react-icons/io";
 import { images } from "../assets/assets";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { useAuth } from "../Context/AuthContext";
+import { BASE_URL } from "../config/config.js";
+import { BiArrowBack } from "react-icons/bi";
+
 
 const Navbar = ({ setProfileShow, setDoctorProfile }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [notificationCount, setNotificationCount] = useState(0);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showMobileNotifications, setShowMobileNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
   const navigate = useNavigate();
-  const { user, userName, role, isProfileAdded, manualLogout } = useAuth();
+  const { user, uid, userName, role, isProfileAdded, manualLogout } = useAuth();
   const displayName = userName || user;
 
   const { pathname } = useLocation();
@@ -114,11 +121,89 @@ const Navbar = ({ setProfileShow, setDoctorProfile }) => {
 
   const canShowProfileButton = role === "patient" || role === "doctor";
 
+  // Fetch notifications count
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!uid || !canShowProfileButton) {
+        setNotificationCount(0);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${BASE_URL}/notifications/${uid}`);
+        const data = await response.json();
+
+        if (data.success) {
+          const unreadCount = data.notifications.filter(n => !n.read).length;
+          setNotificationCount(unreadCount);
+        } else {
+          setNotificationCount(0);
+        }
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+        setNotificationCount(0);
+      }
+    };
+
+    fetchNotifications();
+
+    // Refresh notifications every 30 seconds
+    const interval = setInterval(fetchNotifications, 30000);
+
+    return () => clearInterval(interval);
+  }, [uid, canShowProfileButton, BASE_URL]);
+
+  // Handle notification bell click
+  const handleNotificationClick = async () => {
+    if (!uid || !canShowProfileButton) return;
+
+    try {
+      const response = await fetch(`${BASE_URL}/notifications/${uid}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setNotifications(data.notifications);
+        setShowNotifications(!showNotifications);
+
+        // Mark all notifications as read
+        const unreadNotifications = data.notifications.filter(n => !n.read);
+        for (const notification of unreadNotifications) {
+          try {
+            await fetch(`${BASE_URL}/notifications/${notification._id}/read`, {
+              method: 'PUT'
+            });
+          } catch (markError) {
+            console.error('Error marking notification as read:', markError);
+          }
+        }
+
+        // Update count to 0
+        setNotificationCount(0);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  // Format notification time
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${diffDays}d ago`;
+  };
+
   return (
     <header
-      className={`w-full min-h-[70px] md:h-[90px] bg-white flex items-center justify-between px-4 sm:px-6 lg:px-16 py-2 z-50 shadow-md ${
-        pathname.includes("-dashboard") ? "fixed top-0 z-[100]" : "relative z-[100]"
-      }`}
+      className={`w-full min-h-[70px] md:h-[90px] bg-white flex items-center justify-between px-4 sm:px-6 lg:px-16 py-2 z-50 shadow-md ${pathname.includes("-dashboard") ? "fixed top-0 z-[100]" : "relative z-[100]"
+        }`}
       style={{ backgroundColor: navBG }}
     >
       {/* Logo */}
@@ -137,9 +222,8 @@ const Navbar = ({ setProfileShow, setDoctorProfile }) => {
       <div className="hidden lg:flex items-center justify-between gap-4 xl:gap-6 flex-1">
         {/* Search */}
         <div
-          className={`flex items-center ${
-            displayName ? "w-full max-w-[500px]" : "w-full max-w-[650px]"
-          } h-[42px] lg:h-[48px] flex-1 rounded-full border-none overflow-hidden`}
+          className={`flex items-center ${displayName ? "w-full max-w-[500px]" : "w-full max-w-[650px]"
+            } h-[42px] lg:h-[48px] flex-1 rounded-full border-none overflow-hidden`}
           style={{ backgroundColor: searchBarColor }}
         >
           <div className="relative w-[115px]">
@@ -204,6 +288,54 @@ const Navbar = ({ setProfileShow, setDoctorProfile }) => {
           <Link to="/contactus" className="font-normal">
             Contact Us
           </Link>
+
+          {/* Notification Icon for Patient and Doctor */}
+          {canShowProfileButton && (
+            <div className="relative">
+              <button
+                onClick={handleNotificationClick}
+                className="relative p-1 hover:text-gray-700 transition-colors"
+              >
+                <FaBell size={20} />
+                {notificationCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    {notificationCount > 9 ? '9+' : notificationCount}
+                  </span>
+                )}
+              </button>
+
+              {/* Notifications Dropdown */}
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-300 rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto">
+                  <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+                    <h3 className="font-semibold text-gray-900">Notifications</h3>
+                    <button onClick={() => setShowNotifications(false)}>
+                      <IoMdClose size={22} />
+                    </button>
+                  </div>
+
+                  <div className="divide-y divide-gray-200">
+                    {notifications.length > 0 ? (
+                      notifications.map((notification) => (
+                        <div key={notification._id} className="p-4 hover:bg-gray-50">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <p className="text-sm text-gray-900 break-words break-all whitespace-normal">{notification.message}</p>
+                              <p className="text-xs text-gray-500 mt-1">{formatTime(notification.createdAt)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-gray-500">
+                        <p className="text-sm">No notifications yet</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="relative group">
             <button
@@ -274,15 +406,39 @@ const Navbar = ({ setProfileShow, setDoctorProfile }) => {
             Contact Us
           </Link>
 
+          {/* Notification Icon for Mobile */}
+          {canShowProfileButton && (
+            <div className="relative">
+              <button
+                onClick={async () => {
+                  await handleNotificationClick();
+                  setShowMenu(false);
+                  setShowMobileNotifications(true);
+                }}
+                className="relative p-1 hover:text-gray-700 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <h1>Notifications</h1>
+                  <FaBell size={20} />
+                  {notificationCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {notificationCount > 9 ? '9+' : notificationCount}
+                    </span>
+                  )}
+                </div>
+              </button>
+            </div>
+          )}
+
           <div className="w-full border-t pt-4">
             <button
               onClick={
                 displayName
                   ? null
                   : () => {
-                      navigate("/login");
-                      setShowMenu(false);
-                    }
+                    navigate("/login");
+                    setShowMenu(false);
+                  }
               }
               className="flex items-center gap-2 font-normal focus:outline-none text-base"
             >
@@ -321,8 +477,46 @@ const Navbar = ({ setProfileShow, setDoctorProfile }) => {
             )}
           </div>
         </nav>
+      )
+      }
+      {showMobileNotifications && (
+        <div className="fixed inset-0 z-[300] bg-white animate-slide-in-left lg:hidden">
+
+          {/* Header */}
+          <div className="flex items-center gap-3 p-4 border-b">
+            <button
+              onClick={() => {
+                setShowMobileNotifications(false);
+                setShowMenu(true);
+                setShowNotifications(false)
+              }}
+            >
+              <BiArrowBack size={20} />
+            </button>
+            <h2 className="text-lg font-semibold">Notifications</h2>
+          </div>
+
+          <div className="divide-y divide-gray-200 overflow-y-auto h-[calc(100vh-64px)]">
+            {notifications.length > 0 ? (
+              notifications.map((notification) => (
+                <div key={notification._id} className="p-4">
+                  <p className="text-sm text-gray-900 break-words">
+                    {notification.message}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {formatTime(notification.createdAt)}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <div className="p-6 text-center text-gray-500">
+                No notifications yet
+              </div>
+            )}
+          </div>
+        </div>
       )}
-    </header>
+    </header >
   );
 };
 

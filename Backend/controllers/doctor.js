@@ -1,5 +1,7 @@
 import { User } from "../models/user.js"
 import { Appointment } from "../models/Appointment.js"
+import { createNotification } from "./notification.js";
+import { Message } from "../models/Message.js";
 export const getDoctorById = async (req, res) => {
   try {
     const { id } = req.params
@@ -22,7 +24,46 @@ export const fetchDoctors = async (req, res) => {
 }
 export const fetchActiveDoctorData = async (req, res) => {
   try {
-    const doctorsData = await User.find({ userType: 'doctor', isActive: true }).select('uid name email specialization isActive typeofdoctor qualification experience availableSlots gender').lean();
+    const { patientId } = req.query; // Get patientId from query params
+
+    if (!patientId) {
+      return res.status(400).json({ success: false, message: "patientId is required" });
+    }
+
+    // Find doctors with confirmed appointments for this specific patient
+    const doctorsWithAppointments = await Appointment.aggregate([
+      {
+        $match: {
+          patientId: patientId,
+          status: 'confirmed'
+          // Note: date can be past or future, no additional filter needed
+        }
+      },
+      {
+        $group: {
+          _id: '$doctorId' // Group by doctorId (uid)
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          doctorId: '$_id'
+        }
+      }
+    ]);
+
+    // Extract doctor IDs
+    const doctorIds = doctorsWithAppointments.map(d => d.doctorId).filter(id => id);
+
+    if (doctorIds.length === 0) {
+      return res.status(200).json({ doctors: [] });
+    }
+
+    // Find user documents for these doctor IDs
+    const doctorsData = await User.find({
+      uid: { $in: doctorIds },
+      userType: 'doctor'
+    }).select('uid name email specialization isActive typeofdoctor qualification experience availableSlots gender').lean();
 
     res.status(200).json({ doctors: doctorsData })
   } catch (err) {
@@ -114,13 +155,30 @@ export const updateDoctorByUid = async (req, res) => {
   try {
     const { uid } = req.params;
 
+    // Exclude name and email from updates
+    const updateData = { ...req.body };
+    delete updateData.name;
+    delete updateData.email;
+
     const user = await User.findOneAndUpdate(
       { uid },
-      { $set: req.body },
+      { $set: updateData },
       { new: true }
     );
 
     if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // Create notification for doctor profile update
+    try {
+      await createNotification(
+        uid,
+        'doctor',
+        'profile_updated',
+        'Your profile has been updated.'
+      );
+    } catch (notifErr) {
+      console.error("Notification creation failed:", notifErr.message);
+    }
 
     res.status(200).json({ message: "doctor updated successfully", user });
   } catch (error) {
@@ -135,6 +193,9 @@ export const deleteDoctorById = async (req, res) => {
     if (!deleted) {
       return res.status(404).json({ success: false, message: "doctor not found" });
     }
+    const uid = deleted.uid;
+    await Message.deleteMany({ $or: [{ senderId: uid }, { receiverId: uid }] });
+
     res.status(200).json({ success: true, message: "doctor deleted successfully" })
   } catch (error) {
     console.error("Error deleting doctor:", error);

@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken"
 import { UserProfile } from "../models/userProfile.js";
 import { Message } from "../models/Message.js";
 import validator from "validator";
+import { createNotification } from "./notification.js";
 // ===== SIGN UP (Register New User) =====
 export const registerUser = async (req, res) => {
   const { email, password, userType, name, phoneNumber } = req.body;
@@ -44,7 +45,7 @@ export const registerUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, salt);
 
     // Create new patient with optimized defaults
-    const uid = `patient_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const uid = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const newUser = new User({
       uid,
@@ -233,7 +234,10 @@ export const createUserProfile = async (req, res) => {
       bloodType,
       height,
       weight,
-      address,
+      country,
+      state,
+      city,
+      street,
       bloodPressure,
       diabetes,
       existingInsurance
@@ -246,13 +250,25 @@ export const createUserProfile = async (req, res) => {
     const profile = await UserProfile.findOneAndUpdate(
       { uid },
       {
-        uid, fullName, phoneNumber, email, medicalHistory, previousHospitalizations, allergies, age, dateOfBirth, gender, oxymeterHeartbeat, bloodType, height, weight, address, bloodPressure,
+        uid, fullName, phoneNumber, email, medicalHistory, previousHospitalizations, allergies, age, dateOfBirth, gender, oxymeterHeartbeat, bloodType, height, weight, country, state, city, street, bloodPressure,
         diabetes, existingInsurance
       },
       { upsert: true, new: true }
     );
 
     await User.findOneAndUpdate({ uid }, { isProfileAdded: true, gender, phoneNumber: req.body.phoneNumber });
+
+    // Create notification for profile creation
+    try {
+      await createNotification(
+        uid,
+        'patient',
+        'profile_added',
+        'Your profile has been added.'
+      );
+    } catch (notifErr) {
+      console.error("Notification creation failed:", notifErr.message);
+    }
 
     return res.status(200).json({ message: "Profile saved", profile });
   } catch (error) {
@@ -279,11 +295,28 @@ export const updateUserProfile = async (req, res) => {
     const { uid } = req.params;
     if (!uid) return res.status(400).json({ message: "Missing uid" });
 
+    // Exclude fullName and email from updates
+    const updateData = { ...req.body };
+    delete updateData.fullName;
+    delete updateData.email;
+
     const profile = await UserProfile.findOneAndUpdate(
       { uid },
-      { $set: req.body },
+      { $set: updateData },
       { new: true, upsert: true }
     );
+
+    // Create notification for profile update
+    try {
+      await createNotification(
+        uid,
+        'patient',
+        'profile_updated',
+        'Your profile has been updated.'
+      );
+    } catch (notifErr) {
+      console.error("Notification creation failed:", notifErr.message);
+    }
 
     return res.status(200).json({ message: "Profile updated successfully", profile });
 
@@ -322,7 +355,7 @@ export const socialLogin = async (req, res) => {
       });
     }
 
-    // Find existing user by uid or email
+    // Find existing user by email
     let user = await User.findOne({ email })
 
 

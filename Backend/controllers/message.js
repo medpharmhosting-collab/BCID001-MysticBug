@@ -333,3 +333,16 @@ export const sendMessageFromDoctorToDoctor = async (req, res) => {
     res.status(500).json({ error: "Failed to send doctor message" });
   }
 };
+
+export const getUnreadMessageCount = async (req, res) => {
+  try {
+    const { doctorId } = req.params;
+    const count = await Message.countDocuments({
+      receiverId: doctorId,
+      read: false
+    });
+    res.status(200).json({ count });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch unread count" });
+  }
+};

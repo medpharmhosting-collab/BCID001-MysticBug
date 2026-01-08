@@ -2,6 +2,7 @@ import { Appointment } from "../models/Appointment.js";
 import { User } from "../models/user.js";
 import { UserProfile } from "../models/userProfile.js";
 import sendSMS from "../services/smsService.js";
+import { createNotification } from "./notification.js";
 
 export const createAppointment = async (req, res) => {
   try {
@@ -70,6 +71,29 @@ export const createAppointment = async (req, res) => {
 
     await appt.save();
 
+    // Create notifications
+    try {
+      // Notification for patient
+      await createNotification(
+        patientId,
+        'patient',
+        'appointment_booked',
+        'Your appointment has been booked. Wait for confirmation.'
+      );
+
+      // Notification for doctor
+      await createNotification(
+        doctorId,
+        'doctor',
+        'new_appointment',
+        'Check out new appointments.'
+      );
+
+      console.log("Notifications created");
+    } catch (notifErr) {
+      console.error("Notification creation failed:", notifErr.message);
+    }
+
     // STEP C: Send SMS (NON-BLOCKING & SAFE)
     try {
       const mobile = profile.phoneNumber;
@@ -80,9 +104,9 @@ export const createAppointment = async (req, res) => {
         { name: patientName }
       );
 
-      console.log("✅ SMS triggered");
+      console.log("SMS triggered");
     } catch (smsErr) {
-      console.error("⚠️ SMS failed but appointment saved:", smsErr.message);
+      console.error("SMS failed but appointment saved:", smsErr.message);
     }
 
     return res.status(201).json({
@@ -111,6 +135,19 @@ export const acceptAppointment = async (req, res) => {
     if (!appointment) {
       return res.status(404).json({ message: 'Appointment not found' });
     }
+
+    // Create notification for patient
+    try {
+      await createNotification(
+        appointment.patientId,
+        'patient',
+        'appointment_confirmed',
+        'Your appointment has been confirmed.'
+      );
+    } catch (notifErr) {
+      console.error("Notification creation failed:", notifErr.message);
+    }
+
     // fetch patient profile
     const profile = await UserProfile.findOne({ uid: appointment.patientId });
     const mobile = profile.phoneNumber;
@@ -136,6 +173,19 @@ export const rejectAppointment = async (req, res) => {
     if (!appointment) {
       return res.status(404).json({ message: 'Appointment not found' });
     }
+
+    // Create notification for patient
+    try {
+      await createNotification(
+        appointment.patientId,
+        'patient',
+        'appointment_rejected',
+        'Your appointment has been rejected.'
+      );
+    } catch (notifErr) {
+      console.error("Notification creation failed:", notifErr.message);
+    }
+
     // fetch patient profile
     const profile = await UserProfile.findOne({ uid: appointment.patientId });
     const mobile = profile.phoneNumber;
