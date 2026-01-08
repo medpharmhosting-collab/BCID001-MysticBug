@@ -8,6 +8,7 @@ const Overview = () => {
   const [taskCount, setTaskCount] = useState(0);
   const [doctorSlots, setDoctorSlots] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   const { user, uid } = useAuth();
   const isNewUser = localStorage.getItem("isNewUser") === "true"
@@ -90,6 +91,22 @@ const Overview = () => {
     fetchPendingTaskCount();
     const interval = setInterval(fetchPendingTaskCount, 60000); // Update every 60 seconds
     return () => clearInterval(interval);
+  }, [uid])
+
+  // Fetch unread messages
+  useEffect(() => {
+    if (!uid) return;
+
+    const fetchUnreadMessageCount = async () => {
+      try {
+        const response = await fetch(`${BASE_URL}/messages/unread-count/${uid}`)
+        const data = await response.json();
+        setUnreadMessages(data.count || 0);
+      } catch (error) {
+        console.log("error while fetching unread message count")
+      }
+    }
+    fetchUnreadMessageCount();
   }, [uid])
 
   // Get fresh values - these update with currentTime state changes
@@ -209,7 +226,7 @@ const Overview = () => {
             </h2>
             <div>
               <p className="font-bold text-sm mb-1">Unread Messages</p>
-              <h1 className="font-extrabold mb-2">0</h1>
+              <h1 className="font-extrabold mb-2">{unreadMessages}</h1>
               <p className="text-sm font-semibold">New messages from patients and staff.</p>
             </div>
           </div>

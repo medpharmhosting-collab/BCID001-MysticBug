@@ -1,4 +1,4 @@
-import { conversationBetweenUsers, deleteConversationBetweenUsers, getAllMessagesBetweenDoctors, getLastMessageBetweenDoctors, getLastMessageBetweenUsers, incomingMessagetoDoctorViaPatient, incomingMessagetoPatientViaDoctor, markMessagesAsRead, sendMessage, sendMessageFromDoctorToDoctor } from "../controllers/message.js";
+import { conversationBetweenUsers, deleteConversationBetweenUsers, getAllMessagesBetweenDoctors, getLastMessageBetweenDoctors, getLastMessageBetweenUsers, getUnreadMessageCount, incomingMessagetoDoctorViaPatient, incomingMessagetoPatientViaDoctor, markMessagesAsRead, sendMessage, sendMessageFromDoctorToDoctor } from "../controllers/message.js";
 import express from "express";
 
 export const messageRoutes = express.Router();
@@ -26,3 +26,6 @@ messageRoutes.get('/doctor-last-messages/:doctorId1/:doctorId2', getLastMessageB
 
 // Send message from doctor to doctor
 messageRoutes.post('/doctor-send', sendMessageFromDoctorToDoctor);
+
+// Get unread message count for doctor
+messageRoutes.get('/unread-count/:doctorId', getUnreadMessageCount);
