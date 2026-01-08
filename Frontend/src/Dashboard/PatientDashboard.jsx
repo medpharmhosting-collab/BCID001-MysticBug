@@ -13,7 +13,7 @@ import { BASE_URL } from "../config/config.js"
 const PatientDashboard = () => {
   const [selectedCard, setSelectedCard] = useState(null)
   const [activeDoctorCount, setActiveDoctorCount] = useState(0)
-  const { user, userName, isProfileAdded } = useAuth()
+  const { user, uid, userName, isProfileAdded } = useAuth()
   const displayName = userName || user
   const navigate = useNavigate()
   const isNewUser = localStorage.getItem("isNewUser") === "true"
@@ -37,15 +37,20 @@ const PatientDashboard = () => {
   useEffect(() => {
     const fetchActiveDoctorsCount = async () => {
       try {
-        const response = await fetch(`${BASE_URL}/doctors/get_active_doctor_count`)
+        const response = await fetch(`${BASE_URL}/doctors/active_doctors_data?patientId=${uid}`)
         const data = await response.json()
-        setActiveDoctorCount(data.activeDoctorsCount || 0)
+        const doctors = data.doctors || []
+        const activeCount = doctors.filter(doctor => doctor.isActive === true).length
+        setActiveDoctorCount(activeCount)
       } catch (error) {
         console.log("error while getting active doctors count:", error)
+        setActiveDoctorCount(0)
       }
     }
-    fetchActiveDoctorsCount()
-  }, [BASE_URL])
+    if (uid) {
+      fetchActiveDoctorsCount()
+    }
+  }, [uid, BASE_URL])
 
   const handleSupportCall = () => {
     window.location.href = "tel:number"

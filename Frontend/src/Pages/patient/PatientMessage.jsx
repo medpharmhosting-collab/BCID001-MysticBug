@@ -18,12 +18,12 @@ const PatientMessage = () => {
   const { uid } = useAuth();
   const navigate = useNavigate();
 
-  // Fetch all active doctor
+  // Fetch doctors with confirmed appointments for this patient
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch(`${BASE_URL}/doctors/active_doctors_data`);
+        const res = await fetch(`${BASE_URL}/doctors/active_doctors_data?patientId=${uid}`);
         const doctorsData = await res.json();
 
         setDoctors(Array.isArray(doctorsData.doctors) ? doctorsData.doctors : []);
@@ -35,8 +35,10 @@ const PatientMessage = () => {
       }
     };
 
-    fetchDoctors();
-  }, []);
+    if (uid) {
+      fetchDoctors();
+    }
+  }, [uid]);
 
   // Attach real doctorId directly inside doctor object
   useEffect(() => {
@@ -54,8 +56,7 @@ const PatientMessage = () => {
 
         // attach realDoctorId to doctor objects for easy usage
         setDoctors(prev => prev.map(d => ({ ...d, realDoctorId: ids[d._1] ?? ids[d._id] ?? d.uid })));
-        // NOTE: above line uses d._id; if you have a typo ensure d._id is used (and not d._1)
-        // The idea: attach realDoctorId so later code can use doc.realDoctorId
+
       } catch (err) {
         console.error("Error fetching doctorid by id:", err);
       }
