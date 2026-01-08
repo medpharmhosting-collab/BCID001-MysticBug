@@ -36,7 +36,7 @@ const Footer = () => {
             </a>
 
             <a
-              href="https://www.instagram.com/medih.hospitality?igsh=aGlubmMydmhhNmZ2"
+              href=" https://www.instagram.com/medih_official?igsh=YWZibTEybWlna3B3&utm_source=qr"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 hover:text-[#008287] transition-colors"
