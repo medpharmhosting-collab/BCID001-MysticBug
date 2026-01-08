@@ -15,10 +15,13 @@ const userProfileSchema = new mongoose.Schema({
   bloodType: String,
   height: String,
   weight: String,
-  address: String,
   bloodPressure: String,
   diabetes: String,
-  existingInsurance: String
+  existingInsurance: String,
+  country: String,
+  state: String,
+  city: String,
+  street: String,
 });
 
 export const UserProfile = mongoose.model("UserProfile", userProfileSchema);
