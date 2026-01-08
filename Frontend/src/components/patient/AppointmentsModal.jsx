@@ -56,6 +56,8 @@ const AppointmentsModal = ({ onClose }) => {
   const { uid, user, userName, isProfileAdded } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [filteredSpecialization, setFilteredSpecialization] = useState('')
+
   const displayName =
     Array.isArray(user) && user.length
       ? user.join('')
@@ -684,7 +686,7 @@ const AppointmentsModal = ({ onClose }) => {
         {showDoctorsPopup && (
           <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-[200]">
             <div className="bg-[#d6f7ff] rounded-2xl w-full max-w-3xl p-4 h-[85vh] overflow-y-auto relative">
-              <div className="flex justify-between items-center mb-2">
+              <div className="flex justify-between items-center">
                 <h2 className="text-lg sm:text-xl">select doctor</h2>
                 <button
                   onClick={() => setShowDoctorsPopup(false)}
@@ -693,8 +695,19 @@ const AppointmentsModal = ({ onClose }) => {
                   &times;
                 </button>
               </div>
+              <div className="text-center mb-2">
+                <select
+                  value={filteredSpecialization}
+                  onChange={(e) => setFilteredSpecialization(e.target.value)}
+                  className="p-2 max-w-[400px] rounded-2xl outline-none border border-black">
+                  <option value="">Select Specializations</option>
+                  {[...new Set(doctorsData.map(doc => doc.specialization))].map((specialization, index) => (
+                    <option key={index} value={specialization}>{specialization}</option>
+                  ))}
+                </select>
+              </div>
               <ul className="space-y-3">
-                {doctorsData.map((doc, index) => {
+                {doctorsData.filter(doc => !filteredSpecialization || doc.specialization === filteredSpecialization).map((doc, index) => {
                   const realRating = doctorRatings[doc.name];
                   const displayRating = realRating
                     ? `${realRating.averageRating} (${realRating.totalReviews} reviews)`
