@@ -6,13 +6,11 @@ const DoctorProfile = ({ onClose }) => {
   const { uid } = useAuth();
 
   const [formData, setFormData] = useState({
-    name: "",
     qualification: "",
     designation: "",
     typeOfDoctor: "",
     specialistDetails: "",
     experience: "",
-    email: "",
     gender: "",
     availableSlots: [],
   });
@@ -139,12 +137,17 @@ const DoctorProfile = ({ onClose }) => {
               <input
                 type={item.type}
                 name={item.name}
-                disabled={!editMode}
+                disabled={item.name === "name" || item.name === "email" || !editMode}
                 value={formData[item.name] || ""}
                 onChange={handleChange}
-                className={`px-4 py-3 bg-[#ADD0DA] border border-black ${editMode ? "bg-white" : "cursor-not-allowed"
+                className={`px-4 py-3 border border-black ${item.name === "name" || item.name === "email"
+                  ? "bg-white cursor-not-allowed"
+                  : editMode
+                    ? "bg-white"
+                    : "bg-white cursor-not-allowed"
                   }`}
               />
+
             </div>
           ))}
 
@@ -157,7 +160,7 @@ const DoctorProfile = ({ onClose }) => {
               disabled={!editMode}
               value={formData.gender}
               onChange={handleChange}
-              className={`px-4 py-3 bg-[#ADD0DA] border border-black ${editMode ? "bg-white" : "cursor-not-allowed"
+              className={`px-4 py-3 border border-black ${editMode ? "bg-white" : "cursor-not-allowed"
                 }`}
             >
               <option value="">Select Gender</option>

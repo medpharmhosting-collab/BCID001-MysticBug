@@ -4,9 +4,7 @@ import { useAuth } from "../Context/AuthContext"
 const ProfileModal = ({ onClose }) => {
   const { uid, updateAuthUser } = useAuth()
   const [formData, setFormData] = useState({
-    fullName: "",
     phoneNumber: "",
-    email: "",
     medicalHistory: "",
     previousHospitalizations: "",
     allergies: "",
@@ -17,12 +15,21 @@ const ProfileModal = ({ onClose }) => {
     bloodType: "",
     height: "",
     weight: "",
-    address: "",
+    country: "",
+    state: "",
+    city: "",
+    street: "",
     bloodPressure: "",
     diabetes: "",
     existingInsurance: ""
   });
   const [editMode, setEditMode] = useState(false);
+  const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [loadingCountries, setLoadingCountries] = useState(false);
+  const [loadingStates, setLoadingStates] = useState(false);
+  const [loadingCities, setLoadingCities] = useState(false);
 
   useEffect(() => {
     const getUserProfiledData = async () => {
@@ -30,6 +37,7 @@ const ProfileModal = ({ onClose }) => {
         if (editMode) return;
         const response = await fetch(`${BASE_URL}/users/profile/${uid}`)
         const data = await response.json()
+        console.log(data)
         if (response.status === 200) {
           updateAuthUser({
             isProfileAdded: true,
@@ -49,6 +57,82 @@ const ProfileModal = ({ onClose }) => {
     getUserProfiledData()
   }, [uid, editMode])
 
+  useEffect(() => {
+    if (!editMode) return;
+    const fetchCountries = async () => {
+      setLoadingCountries(true);
+      try {
+        const response = await fetch('https://countriesnow.space/api/v0.1/countries');
+        const data = await response.json();
+        if (data.data) {
+          setCountries(data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching countries:', error);
+      } finally {
+        setLoadingCountries(false);
+      }
+    };
+    fetchCountries();
+  }, [editMode]);
+
+  useEffect(() => {
+    if (editMode && formData.country) {
+      fetchStates(formData.country);
+    }
+  }, [editMode, formData.country]);
+  useEffect(() => {
+    if (editMode && formData.country && formData.state) {
+      fetchCities(formData.country, formData.state);
+    }
+  }, [editMode, formData.state]);
+
+  const fetchStates = async (country) => {
+    setLoadingStates(true);
+    try {
+      const response = await fetch('https://countriesnow.space/api/v0.1/countries/states', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ country })
+      });
+      const data = await response.json();
+      if (data.data && data.data.states) {
+        setStates(data.data.states);
+      } else {
+        setStates([]);
+      }
+    } catch (error) {
+      console.error('Error fetching states:', error);
+      setStates([]);
+    } finally {
+      setLoadingStates(false);
+    }
+  };
+
+  const fetchCities = async (country, state) => {
+    setLoadingCities(true);
+    try {
+      const response = await fetch('https://countriesnow.space/api/v0.1/countries/state/cities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ country, state })
+      });
+      const data = await response.json();
+      if (data.data) {
+        setCities(data.data);
+      } else {
+        setCities([]);
+      }
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+      setCities([]);
+    } finally {
+      setLoadingCities(false);
+    }
+  };
+
+
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -56,6 +140,53 @@ const ProfileModal = ({ onClose }) => {
     if (name === "phoneNumber") {
       if (!/^\d*$/.test(value)) return;
       return setFormData({ ...formData, [name]: value });
+    }
+
+    if (name === "country") {
+      setFormData(prev => ({
+        ...prev,
+        country: value,
+        state: '',
+        city: ''
+      }));
+      if (value) {
+        fetchStates(value);
+      } else {
+        setStates([]);
+        setCities([]);
+      }
+      return;
+    }
+
+    if (name === "state") {
+      setFormData(prev => ({
+        ...prev,
+        state: value,
+        city: ''
+      }));
+      if (value && formData.country) {
+        fetchCities(formData.country, value);
+      } else {
+        setCities([]);
+      }
+      return;
+    }
+
+    if (name === "dateOfBirth") {
+      // Calculate age
+      const today = new Date();
+      const birthDate = new Date(value);
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      setFormData(prev => ({
+        ...prev,
+        dateOfBirth: value,
+        age: age.toString()
+      }));
+      return;
     }
 
     setFormData({
@@ -66,6 +197,22 @@ const ProfileModal = ({ onClose }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validate age matches DOB
+    if (formData.dateOfBirth) {
+      const today = new Date();
+      const birthDate = new Date(formData.dateOfBirth);
+      let calculatedAge = today.getFullYear() - birthDate.getFullYear();
+      const monthDiff = today.getMonth() - birthDate.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+        calculatedAge--;
+      }
+      if (parseInt(formData.age) !== calculatedAge) {
+        alert("Age does not match the selected Date of Birth.");
+        return;
+      }
+    }
+
     setEditMode(false);
     try {
       const response = await fetch(`${BASE_URL}/users/profile/${uid}`, {
@@ -109,10 +256,10 @@ const ProfileModal = ({ onClose }) => {
                   id='fullName'
                   type="text"
                   name="fullName"
-                  disabled={!editMode}
+                  disabled
                   value={formData.fullName || ''}
                   onChange={handleChange}
-                  className={`w-full px-4 py-3 bg-[#Add0Da] border border-black focus:outline-none uppercase ${editMode ? "bg-white" : "cursor-not-allowed"}`}
+                  className={`w-full px-4 py-3 bg-[#Add0Da] border border-black focus:outline-none uppercase ${editMode ? "bg-white cursor-not-allowed" : "cursor-not-allowed"}`}
                 />
               </div>
 
@@ -141,10 +288,9 @@ const ProfileModal = ({ onClose }) => {
                   id='email'
                   type="text"
                   name="email"
-                  disabled={!editMode}
+                  disabled
                   value={formData.email || ''}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-3 bg-[#Add0Da] border border-black focus:outline-none ${editMode ? "bg-white" : "cursor-not-allowed"}`}
+                  className={`w-full px-4 py-3 bg-[#Add0Da] border border-black focus:outline-none ${editMode ? "bg-white cursor-not-allowed" : "cursor-not-allowed"}`}
                 />
               </div>
 
@@ -199,22 +345,6 @@ const ProfileModal = ({ onClose }) => {
               {/* LEFT SIDE */}
               <div className="grid grid-cols-12 gap-4">
 
-                {/* AGE */}
-                <div className="col-span-2">
-                  <label className="block h-[20px] text-gray-800 font-medium mb-2 whitespace-nowrap">
-                    Age*
-                  </label>
-                  <input
-                    type="number"
-                    name="age"
-                    disabled={!editMode}
-                    value={formData.age || ""}
-                    onChange={handleChange}
-                    className={`w-full h-[48px] px-2 border border-black focus:outline-none ${editMode ? "bg-white" : "bg-[#Add0Da] cursor-not-allowed"
-                      }`}
-                  />
-                </div>
-
                 {/* DOB */}
                 <div className="col-span-4">
                   <label className="block h-[20px] text-gray-800 font-medium mb-2 whitespace-nowrap">
@@ -225,6 +355,22 @@ const ProfileModal = ({ onClose }) => {
                     name="dateOfBirth"
                     disabled={!editMode}
                     value={formData.dateOfBirth || ""}
+                    onChange={handleChange}
+                    className={`w-full h-[48px] px-2 border border-black focus:outline-none ${editMode ? "bg-white" : "bg-[#Add0Da] cursor-not-allowed"
+                      }`}
+                  />
+                </div>
+
+                {/* AGE */}
+                <div className="col-span-2">
+                  <label className="block h-[20px] text-gray-800 font-medium mb-2 whitespace-nowrap">
+                    Age*
+                  </label>
+                  <input
+                    type="number"
+                    name="age"
+                    disabled={!editMode}
+                    value={formData.age || ""}
                     onChange={handleChange}
                     className={`w-full h-[48px] px-2 border border-black focus:outline-none ${editMode ? "bg-white" : "bg-[#Add0Da] cursor-not-allowed"
                       }`}
@@ -333,19 +479,110 @@ const ProfileModal = ({ onClose }) => {
 
             {/* ADDRESS, BP, DIABETES */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor='address' className="block text-gray-800 font-medium mb-2">Address</label>
-                <input
-                  id='address'
-                  type="text"
-                  name="address"
-                  disabled={!editMode}
-                  value={formData.address || ''}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-3 bg-[#Add0Da] border border-black focus:outline-none uppercase ${editMode ? "bg-white" : "cursor-not-allowed"}`}
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor='country' className="block text-gray-800 font-medium mb-2">Country</label>
+                  <select
+                    id='country'
+                    name="country"
+                    disabled={!editMode}
+                    value={formData.country || ''}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 bg-[#Add0Da] border border-black focus:outline-none ${editMode ? "bg-white" : "cursor-not-allowed"}`}
+                  >
+                    {editMode ? (
+                      <>
+                        <option value="">Select Country</option>
+                        {loadingCountries ? (
+                          <option disabled>Loading...</option>
+                        ) : (
+                          countries.map((country, index) => (
+                            <option key={index} value={country.country}>
+                              {country.country}
+                            </option>
+                          ))
+                        )}
+                      </>
+                    ) : (
+                      <option value={formData.country || ""}>{formData.country || "N/A"}</option>
+                    )}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor='state' className="block text-gray-800 font-medium mb-2">State</label>
+                  <select
+                    id='state'
+                    name="state"
+                    disabled={!editMode}
+                    value={formData.state || ''}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 bg-[#Add0Da] border border-black focus:outline-none ${editMode ? "bg-white" : "cursor-not-allowed"}`}
+                  >
+                    {editMode ? (
+                      <>
+                        <option value="">Select State</option>
+                        {loadingStates ? (
+                          <option disabled>Loading...</option>
+                        ) : (
+                          states.map((state, index) => (
+                            <option key={index} value={state.name || state}>
+                              {state.name || state}
+                            </option>
+                          ))
+                        )}
+                      </>
+                    ) : (
+                      <option value={formData.state || ""}>{formData.state || "N/A"}</option>
+                    )}
+                  </select>
+                </div>
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor='city' className="block text-gray-800 font-medium mb-2">City</label>
+                  <select
+                    id='city'
+                    name="city"
+                    disabled={!editMode}
+                    value={formData.city || ''}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 bg-[#Add0Da] border border-black focus:outline-none ${editMode ? "bg-white" : "cursor-not-allowed"}`}
+                  >
+                    {editMode ? (
+                      <>
+                        <option value="">Select City</option>
+                        {loadingCities ? (
+                          <option disabled>Loading...</option>
+                        ) : (
+                          cities.map((city, index) => (
+                            <option key={index} value={city}>
+                              {city}
+                            </option>
+                          ))
+                        )}
+                      </>
+                    ) : (
+                      <option value={formData.city || ""}>{formData.city || "N/A"}</option>
+                    )}
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor='street' className="block text-gray-800 font-medium mb-2">Street</label>
+                  <input
+                    id='street'
+                    type="text"
+                    name="street"
+                    disabled={!editMode}
+                    value={formData.street || ''}
+                    onChange={handleChange}
+                    className={`w-full px-4 py-3 bg-[#Add0Da] border border-black focus:outline-none uppercase ${editMode ? "bg-white" : "cursor-not-allowed"}`}
+                    placeholder={editMode ? 'Enter street address' : formData.street || 'N/A'}
+                  />
+                </div>
+              </div>
+            </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label htmlFor='bloodPressure' className="block text-gray-800 font-medium mb-2">Blood Pressure*</label>
@@ -373,21 +610,21 @@ const ProfileModal = ({ onClose }) => {
                   />
                 </div>
               </div>
+              <div>
+                <label htmlFor='existingMedicalInsurance' className="block text-gray-800 font-medium mb-2">Existing Medical Insurance</label>
+                <input
+                  id='existingMedicalInsurance'
+                  type="text"
+                  name="existingInsurance"
+                  disabled={!editMode}
+                  value={formData.existingInsurance || ''}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 bg-[#Add0Da] border border-black focus:outline-none uppercase ${editMode ? "bg-white" : "cursor-not-allowed"}`}
+                />
+              </div>
             </div>
 
-            {/* INSURANCE */}
-            <div className="pb-4">
-              <label htmlFor='existingMedicalInsurance' className="block text-gray-800 font-medium mb-2">Existing Medical Insurance</label>
-              <input
-                id='existingMedicalInsurance'
-                type="text"
-                name="existingInsurance"
-                disabled={!editMode}
-                value={formData.existingInsurance || ''}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 bg-[#Add0Da] border border-black focus:outline-none uppercase ${editMode ? "bg-white" : "cursor-not-allowed"}`}
-              />
-            </div>
+
           </form>
         </div>
 
