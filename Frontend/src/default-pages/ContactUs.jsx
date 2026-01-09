@@ -47,7 +47,7 @@ const ContactUs = () => {
           <img
             src={calling_1}
             alt="calling"
-            className="relative z-50 w-[120%] max-w-none sm:w-full sm:max-w-[780px] lg:max-w-[1350px] h-auto mt-8 md:mt-0 lg:-mt-[260px]"
+            className="relative z-50 w-[140%] max-w-none sm:w-full sm:max-w-[780px] lg:max-w-[1350px] h-auto mt-8 md:mt-0 lg:-mt-[260px]"
           />
         </div>
 
@@ -171,7 +171,7 @@ const ContactUs = () => {
 
             <img
               src={mobile}
-              alt="mobile"  
+              alt="mobile"
               className="absolute w-[260%] sm:w-[220%] md:w-[280%] max-w-none object-contain"
             />
           </div>

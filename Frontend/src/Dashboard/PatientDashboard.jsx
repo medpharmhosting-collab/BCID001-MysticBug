@@ -93,7 +93,7 @@ const PatientDashboard = () => {
                 <img
                   src={card.src}
                   alt={card.title}
-                  className='w-[160px] sm:w-[120px] md:w-[190px] h-[100px] sm:h-[100px] md:h-[150px] object-contain'
+                  className='w-[200px] sm:w-[120px] md:w-[190px] h-[130px] sm:h-[100px] md:h-[150px] object-contain'
 
                 />
                 <h1 className='font-merriweather text-lg sm:text-xl md:text-2xl lg:text-36 font-bold text-center mt-2'>
@@ -102,12 +102,12 @@ const PatientDashboard = () => {
               </div>
             ))}
 
-            <div className="flex justify-center items-center w-full mx-auto h-[200px] sm:h-[220px] z-40">
+            <div className="flex justify-center items-center w-full mx-auto h-[290px] sm:h-[220px] z-40">
               <img
                 onClick={handleSupportCall}
                 src={sirenwtext}
                 alt="emergency alert assistant"
-                className="h-[220px] sm:h-[330px] object-contain cursor-pointer hover:scale-110 transition-transform"
+                className="h-[280px] sm:h-[330px] object-contain cursor-pointer hover:scale-110 transition-transform"
               />
             </div>
           </div>

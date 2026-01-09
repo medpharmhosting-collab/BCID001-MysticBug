@@ -232,7 +232,7 @@ const Homepage = () => {
           </div>
 
           {/* Carousel Container */}
-          <div className="relative w-full h-[300px] sm:h-[400px] md:h-[590px] mx-auto mt-6 rounded-lg overflow-hidden z-10 bg-white/60 backdrop-blur-sm shadow-lg">
+          <div className="relative w-full h-[350px] sm:h-[400px] md:h-[590px] mx-auto mt-6 rounded-lg overflow-hidden z-10 bg-white/60 backdrop-blur-sm shadow-lg">
             {/* Sliding Cards Container */}
             <div
               className="flex h-full transition-transform ease-in-out"
@@ -256,14 +256,14 @@ const Homepage = () => {
                   />
 
                   {/* Content */}
-                  <div className="relative z-20 flex flex-col justify-center h-full px-4 sm:px-8 md:px-12 py-6 sm:py-8 md:py-10 text-black">
-                    <h1 className="text-xl sm:text-2xl md:text-3xl font-medium mb-1">
+                  <div className="relative z-20 flex flex-col justify-center h-full px-3 sm:px-8 md:px-12 py-4 sm:py-8 md:py-10 text-black">
+                    <h1 className="text-lg sm:text-2xl md:text-3xl font-medium mb-1 leading-tight">
                       {disease.title}
                     </h1>
-                    <p className="text-sm sm:text-base md:text-md mb-3 sm:mb-4 text-gray-800">
+                    <p className="text-xs sm:text-base md:text-md mb-2 sm:mb-4 text-gray-800">
                       {disease.year}
                     </p>
-                    <p className="text-sm sm:text-base md:text-lg text-gray-700 leading-relaxed mb-4 sm:mb-6 md:mb-8">
+                    <p className="text-xs sm:text-base md:text-lg text-gray-700 leading-snug sm:leading-relaxed mb-2 sm:mb-6 md:mb-8 line-clamp-4 sm:line-clamp-none">
                       {disease.description}
                     </p>
                   </div>
@@ -370,17 +370,17 @@ const Homepage = () => {
         <img
           src={calling_girl}
           alt="Woman calling for emergency help"
-          className="absolute right-[-50px] sm:right-[-150px]
-          top-[250px] sm:top-[-190px]
-          w-[200px] h-[200px] sm:w-[1000px] sm:h-[700px] z-15"
+          className="absolute right-[-90px] sm:right-[-150px]
+          top-[240px] sm:top-[-190px]
+          w-[330px] h-[200px] sm:w-[1000px] sm:h-[700px] z-15"
         />
 
         <img
           src={repair_man}
           alt="AI health assistant bot"
-          className="absolute left-[-20px] sm:left-[-90px]
-          bottom-[300px] sm:bottom-[20px]
-          w-[200px] h-[200px] sm:w-[1000px] sm:h-[700px] z-15"
+          className="absolute left-[-50px] sm:left-[-90px]
+          bottom-[290px] sm:bottom-[20px]
+          w-[300px] h-[200px] sm:w-[1000px] sm:h-[700px] z-15"
         />
 
         <div

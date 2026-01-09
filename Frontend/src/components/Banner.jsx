@@ -41,7 +41,7 @@ const Banner = ({ src, text = "", para = "" }) => {
         <img
           src={src}
           alt="homepage"
-          className="relative z-20 w-full max-w-[400px] sm:max-w-[500px] md:max-w-[650px] lg:max-w-[1010px] h-auto sm:h-[300px] md:h-[400px] lg:h-[900px] object-contain mt-0 sm:-mt-10 md:-mt-25 lg:-mt-[170px] animate-image-bottom"
+          className="relative z-20 w-full max-w-[500px] sm:max-w-[600px] md:max-w-[750px] lg:max-w-[1010px] h-auto sm:h-[300px] md:h-[400px] lg:h-[900px] object-contain mt-0 sm:-mt-10 md:-mt-25 lg:-mt-[170px] animate-image-bottom"
         />
       </div>
 
